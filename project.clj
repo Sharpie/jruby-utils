@@ -69,8 +69,7 @@
                    :jvm-opts ~(let [version (System/getProperty "java.specification.version")
                                     [major minor _] (clojure.string/split version #"\.")]
                                 (concat
-                                  ["-Djruby.logger.class=com.puppetlabs.jruby_utils.jruby.Slf4jLogger"
-                                   "-XX:+UseG1GC"
+                                  ["-XX:+UseG1GC"
                                    "-Xms1G"
                                    "-Xmx2G"]
                                   (if (>= 17 (java.lang.Integer/parseInt major))

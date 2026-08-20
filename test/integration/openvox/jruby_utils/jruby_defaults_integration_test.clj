@@ -21,7 +21,7 @@
   (apply testutils/with-restored-system-properties
     (keys jruby-defaults/defaults))
   ;; Populates *loader* variable.
-  testutils/with-isolated-classloader)
+  (testutils/with-isolated-classloader))
 
 (deftest default-compile-invokedynamic-is-mixed-test
   (testing "with no property override, JRuby's JIT compiler operates in MIXED mode."

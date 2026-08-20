@@ -21,6 +21,22 @@
     ;; on the OpenVox side to reduce the number of ephemeral Ruby classes that
     ;; force the JRuby compiler to repeatedly re-compile.
     "jruby.compile.invokedynamic" "false"
+
+    ;; Set the default JRuby logger implementation to something that is tied
+    ;; into TrapperKeeper application configuration and controllable via
+    ;; logback.xml. This system property must be set before the
+    ;; org.jruby.util.log.LoggerFactory class is loaded as a static field
+    ;; initializer binds to the setting value for the rest of the process
+    ;; lifetime.
+    ;;
+    ;; This class was created back in the JRuby 1.7 days when there was no
+    ;; SLF4J implementation provided by upstream. JRuby 9 added an official
+    ;; SLF4JLogger that is nearly identical to the one in jruby-utils. Switching
+    ;; would be a breaking change as the leading "jruby." namespace segment
+    ;; would disappear and that would break exsiting LogBack config files
+    ;; out in the field. With no clear benefit, this is not worth the break
+    ;; unless the two implementations diverge dramatically in functionality.
+    "jruby.logger.class"          "com.puppetlabs.jruby_utils.jruby.Slf4jLogger"
   })
 
 (defn set-jruby-property-defaults!

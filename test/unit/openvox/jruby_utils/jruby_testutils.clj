@@ -23,15 +23,25 @@
 
 (defn gen-isolated-loader
   "Create an isolated class loader, populated with a copy of the JVM
-  classpath."
-  ^URLClassLoader []
-  (->> (str/split (System/getProperty "java.class.path")
-                   (re-pattern (System/getProperty "path.separator")))
-       (map #(-> (io/file %) .toURI .toURL))
-       (into-array URL)
-       ;; The last argument, nil parent, prevents delegation to the system
-       ;; classloader, ensuring true isolation
-       (#(URLClassLoader. % nil))))
+  classpath.
+
+  delegated-prefixes is a, possibly empty, vector of namespaces to
+  delegate to the main classloader instead of loading in isolation.
+  This can be used to preserve some global behavior, such as logger
+  configuration."
+  ^ClassLoader [delegated-prefixes]
+  (let [urls (->> (str/split (System/getProperty "java.class.path")
+                              (re-pattern (System/getProperty "path.separator")))
+                   (map #(-> (io/file %) .toURI .toURL))
+                   (into-array URL))
+        parent (.getContextClassLoader (Thread/currentThread))]
+    (proxy [URLClassLoader] [urls nil]
+      (loadClass
+        ([class-name] (.loadClass this class-name false))
+        ([class-name resolve?]
+         (if (some #(str/starts-with? class-name %) delegated-prefixes)
+           (.loadClass parent class-name)
+           (proxy-super loadClass class-name resolve?)))))))
 
 (defn with-isolated-classloader
   "Creates a temporary Java classloader, assigns it to *loader* and then
@@ -40,7 +50,8 @@
   system property combinations. Java reflection must be used to invoke
   constructors and other static methods of classes loaded into the temporary
   classloader."
-  [f]
-  (with-open [loader (gen-isolated-loader)]
-    (binding [*loader* loader]
-      (f))))
+  [& delegated-prefixes]
+  (fn [f]
+    (with-open [loader (gen-isolated-loader delegated-prefixes)]
+      (binding [*loader* loader]
+        (f)))))
