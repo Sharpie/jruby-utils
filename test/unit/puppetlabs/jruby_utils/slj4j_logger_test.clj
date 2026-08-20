@@ -131,3 +131,17 @@
            (-> (get-logger testutils/*loader* "test")
                  (.getClass)
                  (.getName))))))
+
+(deftest logger-class-defaults-to-no-debug
+  (testing "Debug behavor for the SLF4J logger defaults to off."
+    (System/clearProperty "jruby.logger.class")
+    (jruby-defaults/set-jruby-property-defaults!)
+    (is (false? (.isDebugEnabled (get-logger testutils/*loader* "test"))))))
+
+(deftest logger-class-enables-debug-when-requested
+  (testing "Debug behavor for the SLF4J logger is enabled when requested."
+    (System/clearProperty "jruby.logger.class")
+    (jruby-defaults/set-jruby-property-defaults!)
+    (let [logger (get-logger testutils/*loader* "test")]
+      (.setDebugEnable logger true)
+      (is (true? (.isDebugEnabled logger))))))

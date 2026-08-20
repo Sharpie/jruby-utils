@@ -7,6 +7,12 @@ public class Slf4jLogger implements Logger {
 
     private final org.slf4j.Logger logger;
 
+    // Set by JRuby when a debug-logging option such as
+    // -Djruby.invokedynamic.log.binding is given. SLF4J has no API for
+    // changing a logger's level, so track the request here and let it force
+    // isDebugEnabled() on regardless of the configured level.
+    private volatile boolean debugRequested = false;
+
     public Slf4jLogger(String loggerName) {
         logger = LoggerFactory.getLogger("jruby." + loggerName);
     }
@@ -78,11 +84,11 @@ public class Slf4jLogger implements Logger {
 
     @Override
     public boolean isDebugEnabled() {
-        return true;
+        return debugRequested || logger.isDebugEnabled();
     }
 
     @Override
     public void setDebugEnable(boolean b) {
-        warn("setDebugEnable not implemented", null, null);
+        debugRequested = b;
     }
 }
